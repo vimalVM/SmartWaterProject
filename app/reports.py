@@ -46,11 +46,20 @@ def insights():
     conn = get_connection()
     cur = conn.cursor()
 
-    # today usage
-    cur.execute("SELECT SUM(current_usage) FROM tap_usage")
-    today = cur.fetchone()[0] or 0
+    # total usage today + tap count
+    cur.execute("""
+        SELECT 
+            SUM(current_usage), 
+            COUNT(*)
+        FROM tap_usage
+    """)
+    total, tap_count = cur.fetchone()
+    total = total or 0
+    tap_count = tap_count or 1
 
-    # yesterday usage
+    avg = total / tap_count
+
+    # yesterday total usage
     cur.execute("""
         SELECT total_usage
         FROM system_daily_totals
@@ -60,11 +69,12 @@ def insights():
     row = cur.fetchone()
     yesterday = row[0] if row else 0
 
-    change = ((today - yesterday) / yesterday * 100) if yesterday else 0
+    change = ((total - yesterday) / yesterday * 100) if yesterday else 0
 
     conn.close()
 
     return {
-        "avg": round(today, 2),
+        "avg": round(avg, 2),
         "change": round(change, 2)
     }
+
