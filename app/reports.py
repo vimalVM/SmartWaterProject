@@ -77,4 +77,39 @@ def insights():
         "avg": round(avg, 2),
         "change": round(change, 2)
     }
+@reports_bp.route("/api/usage_10min")
+def usage_10min():
+    from flask import request
+    conn = get_connection()
+    cur = conn.cursor()
+
+    range_opt = request.args.get("range", "24h")
+
+    interval_map = {
+        "1h":  "1 HOUR",
+        "3h":  "3 HOUR",
+        "6h":  "6 HOUR",
+        "12h": "12 HOUR",
+        "24h": "24 HOUR"
+    }
+
+    interval = interval_map.get(range_opt, "24 HOUR")
+
+    cur.execute(f"""
+        SELECT
+            recorded_at,
+            SUM(usage_liters)
+        FROM tap_usage_timeseries
+        WHERE recorded_at >= NOW() - INTERVAL {interval}
+        GROUP BY recorded_at
+        ORDER BY recorded_at
+    """)
+
+    rows = cur.fetchall()
+    conn.close()
+
+    return {
+        "labels": [r[0].strftime("%H:%M") for r in rows],
+        "data": [float(r[1]) for r in rows]
+    }
 

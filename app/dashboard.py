@@ -21,12 +21,13 @@ HTML = """
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
 
 <style>
+/* ---------- BASE ---------- */
 body {
     background: linear-gradient(135deg, #eef2f7, #f9fbff);
     font-family: "Segoe UI", sans-serif;
 }
 
-/* HEADER */
+/* ---------- HEADER ---------- */
 .dashboard-header {
     background: linear-gradient(135deg, #4facfe, #00f2fe);
     color: white;
@@ -35,7 +36,76 @@ body {
     box-shadow: 0 12px 30px rgba(0,0,0,0.15);
 }
 
-/* STATUS BADGE ANIMATION */
+/* ---------- CARD ---------- */
+.card-custom {
+    border-radius: 16px;
+    border: none;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+    transition: transform 0.3s ease;
+    height: 100%;
+}
+
+.card-custom:hover {
+    transform: translateY(-6px);
+}
+
+/* ---------- BEAKER CARD (OVERFLOW CONTAINER) ---------- */
+.beaker-card {
+    position: relative;
+    overflow: hidden;
+
+    /* controlled from JS */
+    --overflow-fill: 0%;
+}
+
+/* SAME card fills with water after overflow */
+.beaker-card::before {
+    content: "";
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: var(--overflow-fill);
+    background: linear-gradient(to top, #0d47a1, #42a5f5);
+    opacity: 0.35;
+    transition: height 2s ease-in-out;
+    z-index: 0;
+}
+
+/* keep content above water */
+.beaker-card * {
+    position: relative;
+    z-index: 2;
+}
+
+/* ---------- BEAKER ---------- */
+.beaker-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.beaker {
+    position: relative;
+    width: 120px;
+    height: 220px;
+    border: 4px solid #555;
+    border-radius: 0 0 22px 22px;
+    overflow: hidden;
+    background: rgba(255,255,255,0.7);
+}
+
+/* water inside beaker */
+.water {
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    height: 0%;
+    background: linear-gradient(to top, #6ec6ff, #b3e5ff);
+    transition: height 1.5s ease, background 1s ease;
+}
+
+/* ---------- STATUS BADGE ---------- */
 .badge-animated {
     padding: 8px 16px;
     border-radius: 50px;
@@ -50,30 +120,16 @@ body {
     100% { transform: scale(1); opacity: 0.9; }
 }
 
-.bg-green { background: #1fa463; }
+.bg-green  { background: #1fa463; }
 .bg-orange { background: #f5a524; }
-.bg-red { background: #d93025; }
+.bg-red    { background: #d93025; }
 
-/* CARD */
-.card-custom {
-    border-radius: 16px;
-    border: none;
-    box-shadow: 0 8px 20px rgba(0,0,0,0.08);
-    transition: transform 0.3s ease;
-    height: 100%;
-}
-
-
-.card-custom:hover {
-    transform: translateY(-6px);
-}
-
-/* TAP STATUS */
-.tap-green { color: #1fa463; }
+/* ---------- TAP STATUS ---------- */
+.tap-green  { color: #1fa463; }
 .tap-orange { color: #d88700; }
-.tap-red { color: #d93025; }
+.tap-red    { color: #d93025; }
 
-/* PROGRESS */
+/* ---------- PROGRESS ---------- */
 .progress {
     height: 10px;
     border-radius: 20px;
@@ -83,13 +139,7 @@ body {
     transition: width 1.2s ease-in-out;
 }
 
-.section-title {
-    font-size: 20px;
-    font-weight: 700;
-    margin: 20px 0 12px;
-    color: #222;
-}
-
+/* ---------- ADD TAP ---------- */
 .add-tap-card {
     border: 2px dashed #4facfe;
     border-radius: 16px;
@@ -101,7 +151,6 @@ body {
     cursor: pointer;
     transition: 0.3s;
 }
-
 
 .add-tap-card:hover {
     background: #f0f8ff;
@@ -119,12 +168,13 @@ body {
     justify-content: center;
 }
 
-
+/* ---------- FOOTER ---------- */
 .footer {
     font-size: 13px;
     color: #666;
 }
 </style>
+
 </head>
 
 <body>
@@ -154,6 +204,53 @@ body {
         </div>
     </div>
 </div>
+
+<div class="row g-4 align-items-stretch">
+
+    <!-- LEFT : LINE CHART -->
+    <div class="col-md-8">
+        <div class="card card-custom p-3 h-100 text-center">
+
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <h6 class="fw-bold mb-0">Water Usage (10-Minute Intervals)</h6>
+
+                <select id="timeRange"
+                        class="form-select form-select-sm w-auto"
+                        onchange="loadUsageChart(this.value)">
+                    <option value="1h">Last 1 Hour</option>
+                    <option value="3h">Last 3 Hours</option>
+                    <option value="6h">Last 6 Hours</option>
+                    <option value="12h">Last 12 Hours</option>
+                    <option value="24h" selected>Last 24 Hours</option>
+                </select>
+            </div>
+
+            <canvas id="usageRangeChart"></canvas>
+        </div>
+    </div>
+
+    <!-- RIGHT : BEAKER -->
+    <div class="col-md-4">
+        <div class="card card-custom p-3 h-100 text-center beaker-card">
+
+            <h6 class="fw-bold mb-3">Water Beaker</h6>
+
+            <div class="beaker-container mx-auto">
+                <div class="beaker">
+                    <div id="water" class="water"></div>
+                    <div id="drip" class="drip"></div>
+                </div>
+
+                <div class="beaker-label mt-2">
+                    <b>Total Usage</b><br>
+                    <span id="usageText">0 L</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
 
     <!-- TAPS -->
     <!-- TAP USAGE -->
@@ -334,6 +431,131 @@ function openAddTap() {
 }
 </script>
 
+<script>
+let usageChart = null;
+
+function loadUsageChart(range) {
+
+    fetch(`/api/usage_10min?range=${range}`)
+    .then(res => res.json())
+    .then(data => {
+
+        if (usageChart) usageChart.destroy();
+
+        usageChart = new Chart(
+            document.getElementById("usageRangeChart"),
+            {
+                type: "line",
+                data: {
+                    labels: data.labels,
+                    datasets: [{
+                        label: "Water Used (Litres)",
+                        data: data.data,
+                        borderColor: "#4facfe",
+                        tension: 0.35,
+                        pointRadius: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: "Time"
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: "Water Usage (Litres)"
+                            },
+                            beginAtZero: true
+                        }
+                    },
+                    plugins: {
+                        zoom: {
+                            pan: { enabled: true, mode: "x" },
+                            zoom: {
+                                wheel: { enabled: true },
+                                pinch: { enabled: true },
+                                mode: "x"
+                            }
+                        }
+                    }
+                }
+            }
+        );
+    });
+}
+
+// default load
+loadUsageChart("24h");
+</script>
+<script>
+    function updateBeaker(totalUsage, users, greenLimit, orangeLimit) {
+
+        const maxCapacity = users * orangeLimit;
+        const greenCap = users * greenLimit;
+
+        const water = document.getElementById("water");
+        const text = document.getElementById("usageText");
+        const card = document.querySelector(".beaker-card");
+
+        // Beaker fill (never beyond 100%)
+        const beakerFill = Math.min((totalUsage / maxCapacity) * 100, 100);
+        water.style.height = beakerFill + "%";
+        text.innerText = totalUsage.toFixed(2) + " L";
+
+        // Reset card overflow
+        card.style.setProperty("--overflow-fill", "0%");
+
+        if (totalUsage <= greenCap) {
+
+            water.style.background =
+                "linear-gradient(to top, #6ec6ff, #b3e5ff)";
+
+        } else if (totalUsage <= maxCapacity) {
+
+            water.style.background =
+                "linear-gradient(to top, #1565c0, #64b5f6)";
+
+        } else {
+            //  OVERFLOW STATE
+
+            water.style.background =
+                "linear-gradient(to top, #0d47a1, #1976d2)";
+
+            const overflow = totalUsage - maxCapacity;
+
+            /*
+            Make overflow rise slower:
+            Card fills fully only after 3× capacity overflow
+            */
+            const visualScale = maxCapacity * 3;
+
+            const overflowPercent =
+                Math.min((overflow / visualScale) * 100, 100);
+
+            card.style.setProperty(
+                "--overflow-fill",
+                overflowPercent + "%"
+            );
+
+        }
+    }
+
+
+</script>
+<script>
+updateBeaker(
+    {{ total }},
+    {{ users }},
+    {{ green_limit }},
+    {{ orange_limit }}
+);
+</script>
+
 
 </body>
 </html>
@@ -411,8 +633,12 @@ def home():
         HTML,
         taps=taps,
         total=round(total_usage, 2),
-        color=system_color
+        color=system_color,
+        users=users,
+        green_limit=g,
+        orange_limit=o
     )
+
 
 @app.route("/add_tap", methods=["POST"])
 def add_tap():
