@@ -43,6 +43,14 @@ CREATE TABLE system_daily_totals (
   usage_date DATE
 );
 
+use smart_water;
+CREATE TABLE tap_usage_timeseries (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  tap_id INT,
+  usage_liters DECIMAL(8,2),
+  recorded_at DATETIME,
+  FOREIGN KEY (tap_id) REFERENCES taps(tap_id)
+);
 
 SET FOREIGN_KEY_CHECKS = 0;
 
