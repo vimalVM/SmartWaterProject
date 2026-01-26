@@ -278,14 +278,14 @@ body {
                 <p class="mb-2">Usage: <b>{{ "%.2f"|format(t[1]) }} L</b></p>
                 <!-- PROGRESS BAR (KEPT) -->
                 <div class="progress">
-                    {% if t[2] == 'GREEN' %}
-                        <div class="progress-bar bg-success" style="width:40%"></div>
-                    {% elif t[2] == 'ORANGE' %}
-                        <div class="progress-bar bg-warning" style="width:70%"></div>
-                    {% else %}
-                        <div class="progress-bar bg-danger" style="width:95%"></div>
-                    {% endif %}
+                    <div class="progress-bar 
+                        {% if t[2] == 'GREEN' %}bg-success
+                        {% elif t[2] == 'ORANGE' %}bg-warning
+                        {% else %}bg-danger{% endif %}"
+                        style="width: {{ t[3] }}%">
+                    </div>
                 </div>
+
             </div>
         </div>
         {% endfor %}
@@ -617,7 +617,12 @@ def home():
         else:
             tap_color = "RED"
 
-        taps.append((name, usage, tap_color))
+        max_limit = users * o   # o = orange_limit_per_user
+
+        progress = min((usage / max_limit) * 100, 100)
+
+        taps.append((name, usage, tap_color, round(progress, 2)))
+
 
     # system-level color
     if total_usage <= system_green:
